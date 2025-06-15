@@ -40,19 +40,27 @@ services:
       - POSTGRES_USER=airflow
       - POSTGRES_PASSWORD=airflow
       - POSTGRES_DB=airflow
+    volumes:
+      - airflow_db_data:/var/lib/postgresql/data
 
   airflow-web:
     image: apache/airflow:2.5.3
     restart: always
-    depends_on: [airflow-postgres]
+    depends_on:
+      - airflow-postgres
     environment:
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
+      - PIP_INSTALL_REQUIREMENTS=/producer/requirements.txt
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
       - ./airflow/plugins:/opt/airflow/plugins
-    ports: ["8081:8080"]
+      - ./producer:/producer
+      - ./consumer:/consumer
+      - ./spark/jobs:/opt/bitnami/spark/jobs
+    ports:
+      - "8081:8080"
     command: webserver
 
   airflow-scheduler:
@@ -73,5 +81,7 @@ services:
 networks:
   default:
     driver: bridge
+volumes:
+  airflow_db_data:
 
 

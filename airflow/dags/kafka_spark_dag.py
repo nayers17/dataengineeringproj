@@ -1,5 +1,5 @@
 from airflow import DAG
-from airflow.providers.standard.operators.bash import BashOperator
+from airflow.operators.bash import BashOperator # type: ignore
 from datetime import datetime, timedelta
 
 default_args = {
@@ -19,10 +19,7 @@ with DAG(
     
     produce = BashOperator(
         task_id='produce_messages',
-        bash_command=(
-            'docker exec kafka '
-            'python /producer/producer.py'
-        )
+        bash_command='python /producer/producer.py'
     )
     
     consume = BashOperator(
