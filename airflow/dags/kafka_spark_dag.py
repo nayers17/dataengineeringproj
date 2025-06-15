@@ -22,20 +22,21 @@ with DAG(
         bash_command='python /producer/producer.py'
     )
     
-    consume = BashOperator(
-        task_id='verify_consume',
-        bash_command='docker exec kafka python /consumer/consumer.py'
-)
-    
-    spark_job = BashOperator(
+    run_spark = BashOperator(
         task_id='run_spark_stream',
         bash_command=(
-            'docker exec apache-data-eng-spark-master-1 bash -c '
-            '"spark-submit '
+            'spark-submit '
             '--master spark://spark-master:7077 '
             '--packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0 '
-            '/opt/bitnami/spark/jobs/stream_processor.py"'
+            '/opt/bitnami/spark/jobs/stream_processor.py'
         )
     )
     
-    produce >> spark_job >> consume
+    consume = BashOperator(
+        task_id='verify_consume',
+        bash_command='docker exec kafka python /consumer/consumer.py'
+    )
+    
+
+    
+    produce >> run_spark >> consume

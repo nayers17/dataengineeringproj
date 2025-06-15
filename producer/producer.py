@@ -4,7 +4,7 @@ import json, time
 # connect to broker
 
 producer = KafkaProducer(
-    bootstrap_servers='localhost:9092',
+    bootstrap_servers='kafka:9092',
 )
 
 # send 10 sample messages
