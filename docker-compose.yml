@@ -44,45 +44,51 @@ services:
       - airflow_db_data:/var/lib/postgresql/data
 
   airflow-web:
-    image: apache/airflow:2.5.3
+    build:
+      context: .
+      dockerfile: airflow/Dockerfile
+    image: my-airflow:2.5.3
+    user: root
     restart: always
     depends_on:
       - airflow-postgres
     environment:
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
-      - _PIP_ADDITIONAL_REQUIREMENTS=-r /requirements/producer.txt
-      - AIRFLOW__WEBSERVER__WORKER_LOG_SERVER_PORT=8793
-      - AIRFLOW__WEBSERVER__SECRET_KEY=replace-with-a-long-random-string
-    volumes:
-      - ./airflow/dags:/opt/airflow/dags
-      - ./producer:/producer                  
-      - ./consumer:/consumer
-      - ./producer/requirements.txt:/requirements/producer.txt:ro
-    ports:
-      - "8081:8080"
-      - "8793:8793"
-    command: webserver
-
-  airflow-scheduler:
-    image: apache/airflow:2.5.3
-    restart: always
-    depends_on:
-      - airflow-postgres
-    environment:
-      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
-      - _PIP_ADDITIONAL_REQUIREMENTS=-r /requirements/producer.txt
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
       - AIRFLOW__WEBSERVER__WORKER_LOG_SERVER_PORT=8793
       - AIRFLOW__WEBSERVER__SECRET_KEY=replace-with-a-long-random-string
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
       - ./airflow/plugins:/opt/airflow/plugins
-      - ./producer/requirements.txt:/requirements/producer.txt:ro
       - ./producer:/producer:ro
-      - ./spark/jobs:/opt/bitnami/spark/jobs
-    container_name: airflow-scheduler
+      - ./consumer:/consumer:ro
+      - ./spark/jobs:/opt/bitnami/spark/jobs:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8081:8080"
+      - "8793:8793"
+    command: webserver
+
+  airflow-scheduler:
+    image: my-airflow:2.5.3
+    user: root
+    restart: always
+    depends_on:
+      - airflow-postgres
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
+      - AIRFLOW__WEBSERVER__WORKER_LOG_SERVER_PORT=8793
+      - AIRFLOW__WEBSERVER__SECRET_KEY=replace-with-a-long-random-string
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      - ./producer:/producer:ro
+      - ./consumer:/consumer:ro
+      - ./spark/jobs:/opt/bitnami/spark/jobs:ro
+      - /var/run/docker.sock:/var/run/docker.sock
     command: scheduler
 
 networks:
